@@ -1,0 +1,1745 @@
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// ==================== GAME DATABASE ====================
+const GAME_CATEGORIES = {
+  fps: 'First Person Shooter',
+  battle_royale: 'Battle Royale',
+  moba: 'MOBA',
+  racing: 'Racing',
+  sports: 'Sports',
+  rpg: 'RPG',
+  strategy: 'Strategy',
+  puzzle: 'Puzzle',
+  arcade: 'Arcade',
+  adventure: 'Adventure',
+  simulation: 'Simulation',
+  horror: 'Horror'
+};
+
+const GAME_DATABASE = [
+  // MEGA PLAY Exclusive Games
+  { id: 'cs2', name: 'Combat Strike 2', category: 'fps', players: 45230, rating: 4.9, multiplayer: true, exclusive: true, featured: true, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'apex-legends', name: 'Apex Arena', category: 'battle_royale', players: 89340, rating: 4.8, multiplayer: true, exclusive: true, featured: true, image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80' },
+  { id: 'rocket-league', name: 'Turbo Rivals', category: 'sports', players: 34120, rating: 4.7, multiplayer: true, exclusive: true, featured: true, image: 'https://images.unsplash.com/photo-1511447333015-45b65e60f6d5?w=800&q=80' },
+  
+  // FPS Games
+  { id: 'valorant', name: 'Tactical Force', category: 'fps', players: 56780, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80' },
+  { id: 'cod', name: 'Modern Combat', category: 'fps', players: 67890, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&q=80' },
+  { id: 'overwatch', name: 'Hero Clash', category: 'fps', players: 43210, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&q=80' },
+  { id: 'destiny', name: 'Stellar Guardians', category: 'fps', players: 38900, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800&q=80' },
+  { id: 'halo', name: 'Infinity Ring', category: 'fps', players: 29870, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=800&q=80' },
+  
+  // Battle Royale
+  { id: 'fortnite', name: 'Battle Kingdom', category: 'battle_royale', players: 123450, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80' },
+  { id: 'pubg', name: 'Battlegrounds Pro', category: 'battle_royale', players: 87650, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1519669556878-63bdad8a1a49?w=800&q=80' },
+  { id: 'warzone', name: 'Combat Zone', category: 'battle_royale', players: 98760, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&q=80' },
+  
+  // MOBA Games
+  { id: 'lol', name: 'Legends Arena', category: 'moba', players: 156780, rating: 4.9, multiplayer: true, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'dota2', name: 'Defense of Heroes', category: 'moba', players: 134560, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+  { id: 'smite', name: 'Gods Battle', category: 'moba', players: 45670, rating: 4.5, multiplayer: true, image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80' },
+  
+  // Racing Games
+  { id: 'nfs', name: 'Speed Masters', category: 'racing', players: 34560, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80' },
+  { id: 'f1', name: 'Formula Championship', category: 'racing', players: 28900, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80' },
+  { id: 'dirt', name: 'Rally Extreme', category: 'racing', players: 19870, rating: 4.5, multiplayer: true, image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80' },
+  { id: 'forza', name: 'Horizon Drive', category: 'racing', players: 41230, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80' },
+  
+  // RPG Games
+  { id: 'elden', name: 'Ancient Ring', category: 'rpg', players: 67890, rating: 4.9, multiplayer: false, image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80' },
+  { id: 'skyrim', name: 'Dragon Realm', category: 'rpg', players: 54320, rating: 4.8, multiplayer: false, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' },
+  { id: 'witcher', name: 'Monster Hunter Chronicles', category: 'rpg', players: 78900, rating: 4.9, multiplayer: false, image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80' },
+  { id: 'ff14', name: 'Fantasy Legends', category: 'rpg', players: 89760, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&q=80' },
+  { id: 'dark-souls', name: 'Souls of Darkness', category: 'rpg', players: 45670, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&q=80' },
+  
+  // Strategy Games
+  { id: 'sc2', name: 'Stellar Command', category: 'strategy', players: 23450, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800&q=80' },
+  { id: 'civ6', name: 'Civilization Masters', category: 'strategy', players: 34560, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=800&q=80' },
+  { id: 'aoe4', name: 'Empire Chronicles', category: 'strategy', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80' },
+  { id: 'total-war', name: 'Total Conquest', category: 'strategy', players: 31200, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1519669556878-63bdad8a1a49?w=800&q=80' },
+  
+  // Puzzle Games
+  { id: 'tetris', name: 'Block Master', category: 'puzzle', players: 12340, rating: 4.5, multiplayer: false, image: 'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&q=80' },
+  { id: 'portal', name: 'Dimension Gate', category: 'puzzle', players: 23450, rating: 4.9, multiplayer: false, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'witness', name: 'The Mystery', category: 'puzzle', players: 15670, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+  { id: 'baba', name: 'Logic World', category: 'puzzle', players: 8900, rating: 4.8, multiplayer: false, image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80' },
+  
+  // Arcade Games
+  { id: 'pacman', name: 'Maze Runner Pro', category: 'arcade', players: 8900, rating: 4.4, multiplayer: false, image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80' },
+  { id: 'geometry', name: 'Geometry Rush', category: 'arcade', players: 19870, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80' },
+  { id: 'subway', name: 'Metro Surfer', category: 'arcade', players: 34560, rating: 4.5, multiplayer: false, image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80' },
+  { id: 'temple', name: 'Ancient Runner', category: 'arcade', players: 28900, rating: 4.5, multiplayer: false, image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80' },
+  
+  // Adventure Games
+  { id: 'minecraft', name: 'Block Craft World', category: 'adventure', players: 189760, rating: 4.9, multiplayer: true, image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80' },
+  { id: 'terraria', name: 'Pixel Adventures', category: 'adventure', players: 56780, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' },
+  { id: 'zelda', name: 'Legend Quest', category: 'adventure', players: 67890, rating: 4.9, multiplayer: false, image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80' },
+  { id: 'uncharted', name: 'Treasure Seekers', category: 'adventure', players: 45670, rating: 4.8, multiplayer: false, image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&q=80' },
+  
+  // Simulation Games
+  { id: 'sims', name: 'Life Simulator', category: 'simulation', players: 78900, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&q=80' },
+  { id: 'cities', name: 'City Builder Pro', category: 'simulation', players: 34560, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800&q=80' },
+  { id: 'farming', name: 'Farm Life', category: 'simulation', players: 45670, rating: 4.5, multiplayer: true, image: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=800&q=80' },
+  { id: 'truck', name: 'Highway Trucker', category: 'simulation', players: 23450, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80' },
+  
+  // Horror Games
+  { id: 'resident', name: 'Zombie Outbreak', category: 'horror', players: 45670, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1519669556878-63bdad8a1a49?w=800&q=80' },
+  { id: 'silent', name: 'Silent Terror', category: 'horror', players: 28900, rating: 4.8, multiplayer: false, image: 'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&q=80' },
+  { id: 'outlast', name: 'Escape Nightmare', category: 'horror', players: 34560, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'phasmophobia', name: 'Ghost Hunters', category: 'horror', players: 56780, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+  
+  // More Games to reach 100+
+  { id: 'game50', name: 'Cyber Warriors', category: 'fps', players: 34560, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80' },
+  { id: 'game51', name: 'Space Invaders X', category: 'arcade', players: 12340, rating: 4.5, multiplayer: false, image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80' },
+  { id: 'game52', name: 'Dragon Warriors', category: 'rpg', players: 45670, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80' },
+  { id: 'game53', name: 'Drift Masters', category: 'racing', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80' },
+  { id: 'game54', name: 'Battle Tactics', category: 'strategy', players: 23450, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80' },
+  { id: 'game55', name: 'Ocean Explorer', category: 'adventure', players: 34560, rating: 4.8, multiplayer: false, image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80' },
+  { id: 'game56', name: 'Pixel Fighters', category: 'arcade', players: 19870, rating: 4.5, multiplayer: true, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' },
+  { id: 'game57', name: 'Kingdom Builder', category: 'strategy', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80' },
+  { id: 'game58', name: 'Neon Rush', category: 'racing', players: 23450, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&q=80' },
+  { id: 'game59', name: 'Magic Quest', category: 'rpg', players: 45670, rating: 4.8, multiplayer: false, image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&q=80' },
+  { id: 'game60', name: 'Zombie Defense', category: 'fps', players: 38900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800&q=80' },
+  { id: 'game61', name: 'Crystal Caverns', category: 'adventure', players: 23450, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=800&q=80' },
+  { id: 'game62', name: 'Arena Champions', category: 'moba', players: 67890, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80' },
+  { id: 'game63', name: 'Sky Racers', category: 'racing', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1519669556878-63bdad8a1a49?w=800&q=80' },
+  { id: 'game64', name: 'Mystery Manor', category: 'horror', players: 34560, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&q=80' },
+  { id: 'game65', name: 'Retro Arcade', category: 'arcade', players: 15670, rating: 4.5, multiplayer: false, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'game66', name: 'War Legends', category: 'strategy', players: 34560, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+  { id: 'game67', name: 'Planet Builder', category: 'simulation', players: 28900, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80' },
+  { id: 'game68', name: 'Ninja Warriors', category: 'arcade', players: 23450, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80' },
+  { id: 'game69', name: 'Castle Siege', category: 'strategy', players: 34560, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80' },
+  { id: 'game70', name: 'Robot Revolution', category: 'fps', players: 45670, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80' },
+  { id: 'game71', name: 'Pirate Seas', category: 'adventure', players: 34560, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80' },
+  { id: 'game72', name: 'Cyber Puzzle', category: 'puzzle', players: 15670, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80' },
+  { id: 'game73', name: 'Mech Warriors', category: 'fps', players: 38900, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' },
+  { id: 'game74', name: 'Fantasy Realm', category: 'rpg', players: 56780, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80' },
+  { id: 'game75', name: 'Speed Circuit', category: 'racing', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&q=80' },
+  { id: 'game76', name: 'Tower Defense Pro', category: 'strategy', players: 23450, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&q=80' },
+  { id: 'game77', name: 'Haunted House', category: 'horror', players: 28900, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800&q=80' },
+  { id: 'game78', name: 'Soccer Champions', category: 'sports', players: 45670, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=800&q=80' },
+  { id: 'game79', name: 'Basketball Pro', category: 'sports', players: 34560, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80' },
+  { id: 'game80', name: 'Golf Masters', category: 'sports', players: 19870, rating: 4.5, multiplayer: true, image: 'https://images.unsplash.com/photo-1519669556878-63bdad8a1a49?w=800&q=80' },
+  { id: 'game81', name: 'Boxing Legends', category: 'sports', players: 23450, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&q=80' },
+  { id: 'game82', name: 'Dungeon Crawler', category: 'rpg', players: 34560, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'game83', name: 'Space Station', category: 'simulation', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+  { id: 'game84', name: 'Survival Island', category: 'adventure', players: 45670, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80' },
+  { id: 'game85', name: 'Tank Warfare', category: 'fps', players: 34560, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80' },
+  { id: 'game86', name: 'Quest Heroes', category: 'rpg', players: 45670, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800&q=80' },
+  { id: 'game87', name: 'Racing Mania', category: 'racing', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80' },
+  { id: 'game88', name: 'Card Master', category: 'puzzle', players: 15670, rating: 4.5, multiplayer: true, image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80' },
+  { id: 'game89', name: 'Zombie Apocalypse', category: 'horror', players: 38900, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80' },
+  { id: 'game90', name: 'Ancient Warriors', category: 'strategy', players: 28900, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80' },
+  { id: 'game91', name: 'Pixel Dungeon', category: 'rpg', players: 23450, rating: 4.7, multiplayer: false, image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80' },
+  { id: 'game92', name: 'Mega Racer', category: 'racing', players: 34560, rating: 4.6, multiplayer: true, image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&q=80' },
+  { id: 'game93', name: 'Hero Battle', category: 'moba', players: 78900, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=800&q=80' },
+  { id: 'game94', name: 'Desert Storm', category: 'fps', players: 45670, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=800&q=80' },
+  { id: 'game95', name: 'Cyber City', category: 'simulation', players: 34560, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1526509867162-5b0c0d1b4b33?w=800&q=80' },
+  { id: 'game96', name: 'Monster Hunt', category: 'adventure', players: 45670, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80' },
+  { id: 'game97', name: 'Battle Royale X', category: 'battle_royale', players: 98760, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1519669556878-63bdad8a1a49?w=800&q=80' },
+  { id: 'game98', name: 'Puzzle Quest', category: 'puzzle', players: 19870, rating: 4.6, multiplayer: false, image: 'https://images.unsplash.com/photo-1580327344181-c1163234e5a0?w=800&q=80' },
+  { id: 'game99', name: 'Arena Combat', category: 'fps', players: 56780, rating: 4.7, multiplayer: true, image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80' },
+  { id: 'game100', name: 'Kingdom Wars', category: 'strategy', players: 34560, rating: 4.8, multiplayer: true, image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80' },
+];
+
+// ==================== MAIN APP COMPONENT ====================
+export default function MegaPlayPlatform() {
+  const [currentView, setCurrentView] = useState('home');
+  const [activeGame, setActiveGame] = useState(null);
+  const [user, setUser] = useState({
+    username: 'MegaPlayer',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MegaPlayer',
+    level: 47,
+    xp: 8450,
+    xpToNext: 10000,
+    rank: 'Diamond II',
+    friends: 234,
+    achievements: 156,
+    hoursPlayed: 1247
+  });
+  const [favorites, setFavorites] = useState(['cs2', 'apex-legends', 'lol']);
+  const [recentGames, setRecentGames] = useState(['cs2', 'rocket-league', 'valorant', 'fortnite']);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showMebAI, setShowMebAI] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showFriends, setShowFriends] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'Friend request from ProGamer123', time: '2m ago', type: 'friend' },
+    { id: 2, text: 'New achievement unlocked!', time: '15m ago', type: 'achievement' },
+    { id: 3, text: 'Combat Strike 2 update available', time: '1h ago', type: 'update' }
+  ]);
+  const [onlineFriends, setOnlineFriends] = useState([
+    { id: 1, name: 'ShadowNinja', status: 'online', game: 'Combat Strike 2' },
+    { id: 2, name: 'DragonSlayer', status: 'online', game: 'Legends Arena' },
+    { id: 3, name: 'SpeedDemon', status: 'away', game: null },
+    { id: 4, name: 'MysticWizard', status: 'online', game: 'Fantasy Legends' }
+  ]);
+
+  // Filter games
+  const filteredGames = useMemo(() => {
+    return GAME_DATABASE.filter(game => {
+      const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          game.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
+
+  const featuredGames = GAME_DATABASE.filter(g => g.featured);
+  const exclusiveGames = GAME_DATABASE.filter(g => g.exclusive);
+  const multiplayerGames = GAME_DATABASE.filter(g => g.multiplayer);
+  const trendingGames = [...GAME_DATABASE].sort((a, b) => b.players - a.players).slice(0, 12);
+
+  const launchGame = (game) => {
+    setActiveGame(game);
+    setCurrentView('game');
+    if (!recentGames.includes(game.id)) {
+      setRecentGames(prev => [game.id, ...prev].slice(0, 8));
+    }
+  };
+
+  const toggleFavorite = (gameId) => {
+    setFavorites(prev => 
+      prev.includes(gameId) ? prev.filter(id => id !== gameId) : [...prev, gameId]
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] text-white font-sans overflow-hidden">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@400;500;600;700;800;900&display=swap');
+        
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: 'Rajdhani', sans-serif;
+          overflow-x: hidden;
+        }
+        
+        .font-display {
+          font-family: 'Exo 2', sans-serif;
+        }
+        
+        .glow-text {
+          text-shadow: 0 0 20px rgba(99, 102, 241, 0.8), 0 0 40px rgba(99, 102, 241, 0.4);
+        }
+        
+        .glow-border {
+          box-shadow: 0 0 20px rgba(99, 102, 241, 0.5), inset 0 0 20px rgba(99, 102, 241, 0.1);
+        }
+        
+        .game-card {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .game-card:hover {
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4), 0 0 60px rgba(99, 102, 241, 0.2);
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: rgba(30, 30, 50, 0.5);
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(99, 102, 241, 0.5);
+          border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: rgba(99, 102, 241, 0.8);
+        }
+        
+        .animate-pulse-slow {
+          animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        .bg-grid {
+          background-image: 
+            linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+          background-size: 50px 50px;
+        }
+        
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-slide-up {
+          animation: slideUp 0.5s ease-out;
+        }
+        
+        .glass-effect {
+          background: rgba(15, 15, 25, 0.8);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+      `}</style>
+
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-effect border-b border-indigo-500/20">
+        <div className="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <motion.div 
+              className="font-display font-black text-3xl tracking-wider cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setCurrentView('home')}
+            >
+              <span className="text-white">MEGA</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 glow-text"> PLAY</span>
+            </motion.div>
+            
+            <div className="hidden md:flex items-center gap-2">
+              {[
+                { id: 'home', label: 'Home', icon: '🏠' },
+                { id: 'library', label: 'Library', icon: '📚' },
+                { id: 'multiplayer', label: 'Multiplayer', icon: '🎮' },
+                { id: 'community', label: 'Community', icon: '👥' }
+              ].map(item => (
+                <motion.button
+                  key={item.id}
+                  onClick={() => setCurrentView(item.id)}
+                  className={`px-5 py-2.5 rounded-lg font-semibold tracking-wide transition-all ${
+                    currentView === item.id 
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white glow-border' 
+                      : 'bg-white/5 hover:bg-white/10 text-gray-300'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="mr-2">{item.icon}</span>
+                  {item.label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search games..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64 px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowMebAI(!showMebAI)}
+              className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 font-bold glow-border"
+            >
+              🤖 MEB AI
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowChat(!showChat)}
+              className="relative p-2.5 rounded-lg bg-white/10 hover:bg-white/20"
+            >
+              💬
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs flex items-center justify-center">3</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowFriends(!showFriends)}
+              className="relative p-2.5 rounded-lg bg-white/10 hover:bg-white/20"
+            >
+              👥
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full text-xs flex items-center justify-center">{onlineFriends.filter(f => f.status === 'online').length}</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowProfile(!showProfile)}
+              className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20"
+            >
+              <img src={user.avatar} alt="Avatar" className="w-8 h-8 rounded-full" />
+              <div className="text-left hidden lg:block">
+                <div className="font-bold text-sm">{user.username}</div>
+                <div className="text-xs text-indigo-400">Level {user.level}</div>
+              </div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2.5 rounded-lg bg-white/10 hover:bg-white/20"
+            >
+              ⚙️
+            </motion.button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="pt-24 min-h-screen">
+        <AnimatePresence mode="wait">
+          {currentView === 'home' && <HomePage 
+            featuredGames={featuredGames}
+            trendingGames={trendingGames}
+            exclusiveGames={exclusiveGames}
+            multiplayerGames={multiplayerGames}
+            recentGames={recentGames}
+            gameDatabase={GAME_DATABASE}
+            launchGame={launchGame}
+            toggleFavorite={toggleFavorite}
+            favorites={favorites}
+          />}
+          
+          {currentView === 'library' && <LibraryView 
+            games={filteredGames}
+            categories={GAME_CATEGORIES}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            launchGame={launchGame}
+            toggleFavorite={toggleFavorite}
+            favorites={favorites}
+            recentGames={recentGames}
+            gameDatabase={GAME_DATABASE}
+          />}
+          
+          {currentView === 'multiplayer' && <MultiplayerView 
+            games={multiplayerGames}
+            launchGame={launchGame}
+            onlineFriends={onlineFriends}
+          />}
+          
+          {currentView === 'community' && <CommunityView 
+            user={user}
+            onlineFriends={onlineFriends}
+          />}
+          
+          {currentView === 'game' && activeGame && <GameLauncher 
+            game={activeGame}
+            onBack={() => setCurrentView('home')}
+            user={user}
+          />}
+        </AnimatePresence>
+      </div>
+
+      {/* MEB AI Assistant */}
+      <AnimatePresence>
+        {showMebAI && <MebAIAssistant 
+          onClose={() => setShowMebAI(false)}
+          games={GAME_DATABASE}
+          user={user}
+          launchGame={launchGame}
+        />}
+      </AnimatePresence>
+
+      {/* Chat Panel */}
+      <AnimatePresence>
+        {showChat && <ChatPanel 
+          onClose={() => setShowChat(false)}
+          notifications={notifications}
+        />}
+      </AnimatePresence>
+
+      {/* Friends Panel */}
+      <AnimatePresence>
+        {showFriends && <FriendsPanel 
+          onClose={() => setShowFriends(false)}
+          friends={onlineFriends}
+        />}
+      </AnimatePresence>
+
+      {/* Profile Panel */}
+      <AnimatePresence>
+        {showProfile && <ProfilePanel 
+          onClose={() => setShowProfile(false)}
+          user={user}
+        />}
+      </AnimatePresence>
+
+      {/* Settings Panel */}
+      <AnimatePresence>
+        {showSettings && <SettingsPanel 
+          onClose={() => setShowSettings(false)}
+        />}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ==================== HOME PAGE ====================
+function HomePage({ featuredGames, trendingGames, exclusiveGames, multiplayerGames, recentGames, gameDatabase, launchGame, toggleFavorite, favorites }) {
+  const [currentFeatured, setCurrentFeatured] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentFeatured(prev => (prev + 1) % featuredGames.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [featuredGames.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="pb-20"
+    >
+      {/* Hero Section with Featured Game */}
+      <div className="relative h-[600px] mb-12 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentFeatured}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.7 }}
+            className="absolute inset-0"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent z-10" />
+            <img 
+              src={featuredGames[currentFeatured]?.image} 
+              alt={featuredGames[currentFeatured]?.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 z-20 p-12">
+              <div className="max-w-screen-2xl mx-auto">
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <div className="inline-block px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg mb-4 font-bold">
+                    🔥 FEATURED
+                  </div>
+                  <h1 className="font-display font-black text-7xl mb-4 glow-text">{featuredGames[currentFeatured]?.name}</h1>
+                  <p className="text-2xl text-gray-300 mb-6 max-w-2xl">
+                    {featuredGames[currentFeatured]?.multiplayer ? '🎮 Multiplayer' : '👤 Single Player'} • 
+                    ⭐ {featuredGames[currentFeatured]?.rating}/5.0 • 
+                    👥 {featuredGames[currentFeatured]?.players.toLocaleString()} playing now
+                  </p>
+                  <div className="flex gap-4">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => launchGame(featuredGames[currentFeatured])}
+                      className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-bold text-xl glow-border"
+                    >
+                      🚀 PLAY NOW
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => toggleFavorite(featuredGames[currentFeatured]?.id)}
+                      className="px-8 py-4 bg-white/10 backdrop-blur rounded-lg font-bold text-xl border border-white/20"
+                    >
+                      {favorites.includes(featuredGames[currentFeatured]?.id) ? '❤️' : '🤍'} {favorites.includes(featuredGames[currentFeatured]?.id) ? 'FAVORITED' : 'ADD TO FAVORITES'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+        
+        {/* Featured Carousel Dots */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+          {featuredGames.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentFeatured(index)}
+              className={`w-3 h-3 rounded-full transition-all ${
+                currentFeatured === index ? 'bg-indigo-500 w-8' : 'bg-white/30'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-screen-2xl mx-auto px-6 space-y-12">
+        {/* Recently Played */}
+        {recentGames.length > 0 && (
+          <section>
+            <h2 className="font-display font-bold text-4xl mb-6 flex items-center gap-3">
+              <span className="text-3xl">🕐</span>
+              Recently Played
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {recentGames.map(gameId => {
+                const game = gameDatabase.find(g => g.id === gameId);
+                return game && <GameCard key={game.id} game={game} launchGame={launchGame} toggleFavorite={toggleFavorite} isFavorite={favorites.includes(game.id)} />;
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* MEGA PLAY Exclusives */}
+        <section>
+          <h2 className="font-display font-bold text-4xl mb-6 flex items-center gap-3">
+            <span className="text-3xl">⭐</span>
+            MEGA PLAY Exclusives
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {exclusiveGames.map(game => (
+              <GameCard key={game.id} game={game} launchGame={launchGame} toggleFavorite={toggleFavorite} isFavorite={favorites.includes(game.id)} />
+            ))}
+          </div>
+        </section>
+
+        {/* Trending Now */}
+        <section>
+          <h2 className="font-display font-bold text-4xl mb-6 flex items-center gap-3">
+            <span className="text-3xl">🔥</span>
+            Trending Now
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {trendingGames.map(game => (
+              <GameCard key={game.id} game={game} launchGame={launchGame} toggleFavorite={toggleFavorite} isFavorite={favorites.includes(game.id)} compact />
+            ))}
+          </div>
+        </section>
+
+        {/* Multiplayer Games */}
+        <section>
+          <h2 className="font-display font-bold text-4xl mb-6 flex items-center gap-3">
+            <span className="text-3xl">🎮</span>
+            Multiplayer Arena
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {multiplayerGames.slice(0, 8).map(game => (
+              <GameCard key={game.id} game={game} launchGame={launchGame} toggleFavorite={toggleFavorite} isFavorite={favorites.includes(game.id)} />
+            ))}
+          </div>
+        </section>
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== GAME CARD COMPONENT ====================
+function GameCard({ game, launchGame, toggleFavorite, isFavorite, compact = false }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`game-card group relative rounded-xl overflow-hidden cursor-pointer glass-effect ${compact ? 'h-48' : 'h-72'}`}
+      onClick={() => launchGame(game)}
+    >
+      <img src={game.image} alt={game.name} className="w-full h-full object-cover" />
+      
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      
+      <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <h3 className="font-display font-bold text-xl mb-2">{game.name}</h3>
+        <div className="flex items-center gap-2 text-sm mb-3">
+          <span className="px-2 py-1 bg-indigo-600 rounded">{GAME_CATEGORIES[game.category]}</span>
+          <span>⭐ {game.rating}</span>
+        </div>
+        <div className="flex gap-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              launchGame(game);
+            }}
+            className="flex-1 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-bold"
+          >
+            PLAY
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(game.id);
+            }}
+            className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center text-xl"
+          >
+            {isFavorite ? '❤️' : '🤍'}
+          </motion.button>
+        </div>
+      </div>
+      
+      <div className="absolute top-4 left-4">
+        {game.exclusive && (
+          <span className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full text-xs font-bold">
+            ⭐ EXCLUSIVE
+          </span>
+        )}
+      </div>
+      
+      <div className="absolute top-4 right-4">
+        <span className="px-3 py-1 bg-black/70 backdrop-blur rounded-full text-xs font-bold">
+          👥 {(game.players / 1000).toFixed(1)}K
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== LIBRARY VIEW ====================
+function LibraryView({ games, categories, selectedCategory, setSelectedCategory, launchGame, toggleFavorite, favorites, recentGames, gameDatabase }) {
+  const [sortBy, setSortBy] = useState('popular');
+  
+  const sortedGames = useMemo(() => {
+    const sorted = [...games];
+    switch(sortBy) {
+      case 'popular':
+        return sorted.sort((a, b) => b.players - a.players);
+      case 'rating':
+        return sorted.sort((a, b) => b.rating - a.rating);
+      case 'name':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      default:
+        return sorted;
+    }
+  }, [games, sortBy]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="max-w-screen-2xl mx-auto px-6 pb-20"
+    >
+      <div className="mb-8">
+        <h1 className="font-display font-black text-6xl mb-4 glow-text">Game Library</h1>
+        <p className="text-xl text-gray-400">{games.length} games available • {favorites.length} favorites</p>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-4 mb-8 p-6 glass-effect rounded-xl">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              selectedCategory === 'all' 
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 glow-border' 
+                : 'bg-white/5 hover:bg-white/10'
+            }`}
+          >
+            All Games
+          </button>
+          {Object.entries(categories).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedCategory(key)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                selectedCategory === key 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 glow-border' 
+                  : 'bg-white/5 hover:bg-white/10'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-sm text-gray-400">Sort by:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:border-indigo-500 focus:outline-none"
+          >
+            <option value="popular">Most Popular</option>
+            <option value="rating">Highest Rated</option>
+            <option value="name">Name (A-Z)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Games Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        {sortedGames.map(game => (
+          <GameCard key={game.id} game={game} launchGame={launchGame} toggleFavorite={toggleFavorite} isFavorite={favorites.includes(game.id)} />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== MULTIPLAYER VIEW ====================
+function MultiplayerView({ games, launchGame, onlineFriends }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="max-w-screen-2xl mx-auto px-6 pb-20"
+    >
+      <div className="mb-8">
+        <h1 className="font-display font-black text-6xl mb-4 glow-text">Multiplayer Arena</h1>
+        <p className="text-xl text-gray-400">{onlineFriends.filter(f => f.status === 'online').length} friends online • {games.length} multiplayer games</p>
+      </div>
+
+      {/* Quick Match */}
+      <div className="mb-12 p-8 glass-effect rounded-xl border-2 border-indigo-500/30">
+        <h2 className="font-display font-bold text-3xl mb-4">🎯 Quick Match</h2>
+        <p className="text-gray-400 mb-6">Find a match in your favorite games instantly</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {games.slice(0, 4).map(game => (
+            <motion.button
+              key={game.id}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => launchGame(game)}
+              className="p-6 glass-effect rounded-xl hover:border-indigo-500 border border-white/20 transition-all"
+            >
+              <div className="text-4xl mb-2">🎮</div>
+              <div className="font-bold">{game.name}</div>
+              <div className="text-sm text-gray-400 mt-2">👥 {(game.players / 1000).toFixed(1)}K online</div>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+
+      {/* Online Friends Activity */}
+      <div className="mb-12">
+        <h2 className="font-display font-bold text-3xl mb-6">👥 Friends Activity</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {onlineFriends.filter(f => f.status === 'online').map(friend => (
+            <div key={friend.id} className="p-6 glass-effect rounded-xl flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-2xl">
+                👤
+              </div>
+              <div className="flex-1">
+                <div className="font-bold">{friend.name}</div>
+                <div className="text-sm text-green-400">🟢 {friend.game || 'Online'}</div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 bg-indigo-600 rounded-lg font-semibold"
+              >
+                Join
+              </motion.button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* All Multiplayer Games */}
+      <div>
+        <h2 className="font-display font-bold text-3xl mb-6">🎮 All Multiplayer Games</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {games.map(game => (
+            <GameCard key={game.id} game={game} launchGame={launchGame} toggleFavorite={() => {}} isFavorite={false} />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== COMMUNITY VIEW ====================
+function CommunityView({ user, onlineFriends }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="max-w-screen-2xl mx-auto px-6 pb-20"
+    >
+      <div className="mb-8">
+        <h1 className="font-display font-black text-6xl mb-4 glow-text">Community Hub</h1>
+        <p className="text-xl text-gray-400">Connect with players worldwide</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Feed */}
+        <div className="lg:col-span-2 space-y-4">
+          <h2 className="font-display font-bold text-2xl mb-4">📰 Activity Feed</h2>
+          {[
+            { user: 'ShadowNinja', action: 'achieved', detail: 'Global Elite rank in Combat Strike 2', time: '5m ago' },
+            { user: 'DragonSlayer', action: 'won', detail: 'a match in Legends Arena', time: '12m ago' },
+            { user: 'MysticWizard', action: 'unlocked', detail: 'Legendary Dragon mount', time: '23m ago' },
+            { user: 'SpeedDemon', action: 'completed', detail: 'the Season 5 Battle Pass', time: '1h ago' }
+          ].map((activity, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="p-6 glass-effect rounded-xl flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-2xl">
+                👤
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-300">
+                  <span className="font-bold text-white">{activity.user}</span> {activity.action} {activity.detail}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">{activity.time}</p>
+              </div>
+              <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg">👍</button>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Leaderboard */}
+        <div>
+          <h2 className="font-display font-bold text-2xl mb-4">🏆 Global Leaderboard</h2>
+          <div className="glass-effect rounded-xl p-6 space-y-4">
+            {[
+              { rank: 1, name: 'ProGamer123', score: 15420, badge: '🥇' },
+              { rank: 2, name: 'EliteSniper', score: 14890, badge: '🥈' },
+              { rank: 3, name: 'NinjaKiller', score: 14120, badge: '🥉' },
+              { rank: 4, name: user.username, score: 13540, badge: '⭐' },
+              { rank: 5, name: 'DragonMaster', score: 12980, badge: '💎' }
+            ].map((player) => (
+              <div key={player.rank} className={`flex items-center gap-4 p-3 rounded-lg ${player.name === user.username ? 'bg-indigo-500/20 border border-indigo-500' : 'bg-white/5'}`}>
+                <div className="text-2xl">{player.badge}</div>
+                <div className="flex-1">
+                  <div className="font-bold">{player.name}</div>
+                  <div className="text-sm text-gray-400">{player.score.toLocaleString()} XP</div>
+                </div>
+                <div className="text-gray-400">#{player.rank}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== GAME LAUNCHER ====================
+function GameLauncher({ game, onBack, user }) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (game.id === 'cs2') {
+    return <CombatStrike2Game onBack={onBack} user={user} />;
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-[#0a0a0f]"
+    >
+      {isLoading ? (
+        <div className="h-full flex flex-col items-center justify-center">
+          <div className="text-6xl mb-6 animate-pulse">🎮</div>
+          <h2 className="font-display font-bold text-4xl mb-4">Loading {game.name}...</h2>
+          <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: '100%' }}
+              transition={{ duration: 2 }}
+              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="h-full flex flex-col">
+          <div className="p-4 glass-effect flex items-center justify-between">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onBack}
+              className="px-6 py-3 bg-red-600 rounded-lg font-bold"
+            >
+              ← EXIT GAME
+            </motion.button>
+            <h1 className="font-display font-bold text-2xl">{game.name}</h1>
+            <div className="flex items-center gap-4">
+              <span className="text-green-400">🟢 Online</span>
+              <span>👥 {game.players.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center bg-grid">
+            <div className="text-center">
+              <div className="text-8xl mb-6">🎮</div>
+              <h2 className="font-display font-bold text-4xl mb-4">{game.name}</h2>
+              <p className="text-xl text-gray-400 mb-8">Game is running...</p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-bold text-xl glow-border"
+              >
+                Enter Fullscreen
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ==================== COMBAT STRIKE 2 FPS GAME ====================
+function CombatStrike2Game({ onBack, user }) {
+  const [gameState, setGameState] = useState('menu'); // menu, lobby, game
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [playerHealth, setPlayerHealth] = useState(100);
+  const [playerArmor, setPlayerArmor] = useState(0);
+  const [ammo, setAmmo] = useState(30);
+  const [money, setMoney] = useState(800);
+  const [weapon, setWeapon] = useState('glock');
+  const [score, setScore] = useState({ kills: 0, deaths: 0, assists: 0 });
+  const [showBuyMenu, setShowBuyMenu] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [crosshair, setCrosshair] = useState({ size: 4, color: '#00ff00', gap: 2 });
+  const [settings, setSettings] = useState({
+    fov: 90,
+    sensitivity: 2.5,
+    resolution: '1920x1080',
+    graphics: 'high'
+  });
+
+  const gameModes = [
+    { id: 'competitive', name: 'Competitive', desc: '5v5 Ranked Match', icon: '🏆' },
+    { id: 'casual', name: 'Casual', desc: '5v5 Unranked', icon: '🎮' },
+    { id: 'deathmatch', name: 'Deathmatch', desc: 'Free For All', icon: '💀' },
+    { id: 'bomb', name: 'Bomb Defusal', desc: 'Plant or Defuse', icon: '💣' }
+  ];
+
+  const weapons = [
+    { id: 'glock', name: 'Glock-18', price: 200, type: 'pistol', damage: 28 },
+    { id: 'usp', name: 'USP-S', price: 200, type: 'pistol', damage: 35 },
+    { id: 'deagle', name: 'Desert Eagle', price: 700, type: 'pistol', damage: 63 },
+    { id: 'ak47', name: 'AK-47', price: 2700, type: 'rifle', damage: 36 },
+    { id: 'm4a4', name: 'M4A4', price: 3100, type: 'rifle', damage: 33 },
+    { id: 'awp', name: 'AWP', price: 4750, type: 'sniper', damage: 115 }
+  ];
+
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 't' || e.key === 'T') {
+        setShowBuyMenu(!showBuyMenu);
+      }
+      if (e.key === 'y' || e.key === 'Y') {
+        setShowChat(!showChat);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [showBuyMenu, showChat]);
+
+  if (gameState === 'menu') {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 bg-[#0a0a0f]"
+      >
+        <div className="absolute inset-0 bg-grid opacity-20" />
+        <div className="relative h-full flex flex-col">
+          {/* Header */}
+          <div className="p-6 flex items-center justify-between glass-effect">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onBack}
+              className="px-6 py-3 bg-red-600 rounded-lg font-bold"
+            >
+              ← EXIT
+            </motion.button>
+            <h1 className="font-display font-black text-4xl glow-text">COMBAT STRIKE 2</h1>
+            <div className="w-32" />
+          </div>
+
+          {/* Main Menu */}
+          <div className="flex-1 flex items-center justify-center p-12">
+            <div className="max-w-6xl w-full">
+              <motion.div
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-center mb-12"
+              >
+                <h2 className="font-display font-black text-7xl mb-4 glow-text">COMBAT STRIKE 2</h2>
+                <p className="text-2xl text-gray-400">Ultimate Competitive FPS Experience</p>
+              </motion.div>
+
+              <div className="grid grid-cols-2 gap-6 mb-12">
+                {gameModes.map((mode, i) => (
+                  <motion.button
+                    key={mode.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setSelectedMode(mode.id);
+                      setGameState('lobby');
+                    }}
+                    className="p-8 glass-effect rounded-xl border-2 border-white/10 hover:border-indigo-500 transition-all group"
+                  >
+                    <div className="text-6xl mb-4">{mode.icon}</div>
+                    <h3 className="font-display font-bold text-3xl mb-2">{mode.name}</h3>
+                    <p className="text-gray-400 text-lg">{mode.desc}</p>
+                  </motion.button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-3 gap-6">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-6 glass-effect rounded-xl border border-white/20 hover:border-indigo-500"
+                >
+                  <div className="text-4xl mb-2">⚙️</div>
+                  <div className="font-bold">Settings</div>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-6 glass-effect rounded-xl border border-white/20 hover:border-indigo-500"
+                >
+                  <div className="text-4xl mb-2">🎨</div>
+                  <div className="font-bold">Inventory</div>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-6 glass-effect rounded-xl border border-white/20 hover:border-indigo-500"
+                >
+                  <div className="text-4xl mb-2">📊</div>
+                  <div className="font-bold">Stats</div>
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (gameState === 'lobby') {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 bg-[#0a0a0f]"
+      >
+        <div className="h-full flex flex-col">
+          <div className="p-6 flex items-center justify-between glass-effect">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setGameState('menu')}
+              className="px-6 py-3 bg-red-600 rounded-lg font-bold"
+            >
+              ← BACK
+            </motion.button>
+            <h1 className="font-display font-bold text-2xl">Finding Match...</h1>
+            <div className="w-32" />
+          </div>
+
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                className="text-8xl mb-8"
+              >
+                🎯
+              </motion.div>
+              <h2 className="font-display font-bold text-4xl mb-4">Searching for match...</h2>
+              <p className="text-xl text-gray-400 mb-8">{selectedMode.toUpperCase()} • Estimated time: 00:45</p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setGameState('game')}
+                className="px-12 py-4 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg font-bold text-xl glow-border"
+              >
+                🎮 START GAME (Demo)
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-50 bg-[#0a0a0f]"
+    >
+      {/* HUD */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Top Bar */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between pointer-events-auto">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onBack}
+            className="px-4 py-2 bg-red-600/80 backdrop-blur rounded-lg font-bold text-sm"
+          >
+            ESC - EXIT
+          </motion.button>
+          
+          <div className="flex items-center gap-8 px-6 py-3 glass-effect rounded-lg">
+            <div className="text-center">
+              <div className="text-xs text-gray-400">KILLS</div>
+              <div className="text-2xl font-bold text-green-400">{score.kills}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400">DEATHS</div>
+              <div className="text-2xl font-bold text-red-400">{score.deaths}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400">ASSISTS</div>
+              <div className="text-2xl font-bold text-blue-400">{score.assists}</div>
+            </div>
+          </div>
+
+          <div className="px-6 py-3 glass-effect rounded-lg font-bold">
+            <span className="text-gray-400">ROUND</span> <span className="text-white">12 - 11</span>
+          </div>
+        </div>
+
+        {/* Bottom Left - Health & Armor */}
+        <div className="absolute bottom-8 left-8">
+          <div className="flex items-end gap-4">
+            <div className="text-center">
+              <div className="text-8xl font-display font-black text-white mb-2">{playerHealth}</div>
+              <div className="w-32 h-3 bg-white/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-300"
+                  style={{ width: `${playerHealth}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-400 mt-1">HEALTH</div>
+            </div>
+            <div className="text-center">
+              <div className="text-6xl font-display font-black text-blue-400 mb-2">{playerArmor}</div>
+              <div className="w-24 h-3 bg-white/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300"
+                  style={{ width: `${playerArmor}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-400 mt-1">ARMOR</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Right - Weapon & Ammo */}
+        <div className="absolute bottom-8 right-8">
+          <div className="text-right">
+            <div className="text-6xl font-display font-black mb-2">
+              <span className="text-yellow-400">{ammo}</span>
+              <span className="text-gray-500 text-4xl"> / 120</span>
+            </div>
+            <div className="text-2xl font-bold text-gray-300 mb-2">{weapon.toUpperCase()}</div>
+            <div className="text-lg text-green-400">💰 ${money}</div>
+          </div>
+        </div>
+
+        {/* Crosshair */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="relative w-8 h-8">
+            <div 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 w-1 bg-green-400"
+              style={{ height: `${crosshair.size}px`, backgroundColor: crosshair.color, marginTop: `-${crosshair.size + crosshair.gap}px` }}
+            />
+            <div 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 w-1 bg-green-400"
+              style={{ height: `${crosshair.size}px`, backgroundColor: crosshair.color, marginTop: `${crosshair.gap}px` }}
+            />
+            <div 
+              className="absolute top-1/2 left-1/2 -translate-y-1/2 h-1 bg-green-400"
+              style={{ width: `${crosshair.size}px`, backgroundColor: crosshair.color, marginLeft: `-${crosshair.size + crosshair.gap}px` }}
+            />
+            <div 
+              className="absolute top-1/2 left-1/2 -translate-y-1/2 h-1 bg-green-400"
+              style={{ width: `${crosshair.size}px`, backgroundColor: crosshair.color, marginLeft: `${crosshair.gap}px` }}
+            />
+          </div>
+        </div>
+
+        {/* Kill Feed */}
+        <div className="absolute top-24 right-8 space-y-2">
+          {[
+            { killer: 'ProSniper', killed: 'Enemy1', weapon: 'AWP' },
+            { killer: 'SpeedDemon', killed: 'Enemy2', weapon: 'AK-47' },
+            { killer: user.username, killed: 'Enemy3', weapon: weapon.toUpperCase() }
+          ].map((kill, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="px-4 py-2 glass-effect rounded-lg flex items-center gap-2 text-sm"
+            >
+              <span className="font-bold">{kill.killer}</span>
+              <span className="text-gray-400">[{kill.weapon}]</span>
+              <span className="text-red-400">☠</span>
+              <span className="text-gray-400">{kill.killed}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Buy Menu */}
+      <AnimatePresence>
+        {showBuyMenu && (
+          <motion.div
+            initial={{ opacity: 0, x: -300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -300 }}
+            className="absolute left-8 top-24 bottom-24 w-96 glass-effect rounded-xl p-6 pointer-events-auto overflow-y-auto scrollbar-thin"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-display font-bold text-2xl">BUY MENU</h2>
+              <button onClick={() => setShowBuyMenu(false)} className="text-2xl">✕</button>
+            </div>
+            <div className="text-xl font-bold text-green-400 mb-6">💰 ${money}</div>
+            
+            <div className="space-y-3">
+              {weapons.map(wpn => (
+                <motion.button
+                  key={wpn.id}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (money >= wpn.price) {
+                      setWeapon(wpn.id);
+                      setMoney(prev => prev - wpn.price);
+                      setAmmo(30);
+                    }
+                  }}
+                  disabled={money < wpn.price}
+                  className={`w-full p-4 rounded-lg text-left transition-all ${
+                    money >= wpn.price 
+                      ? 'bg-white/10 hover:bg-white/20 cursor-pointer' 
+                      : 'bg-white/5 opacity-50 cursor-not-allowed'
+                  } ${weapon === wpn.id ? 'border-2 border-green-500' : 'border border-white/20'}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-lg">{wpn.name}</span>
+                    <span className="text-green-400">${wpn.price}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span>⚔️ {wpn.damage} DMG</span>
+                    <span className="px-2 py-0.5 bg-white/10 rounded">{wpn.type.toUpperCase()}</span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/20 space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (money >= 650) {
+                    setPlayerArmor(100);
+                    setMoney(prev => prev - 650);
+                  }
+                }}
+                disabled={money < 650}
+                className={`w-full p-4 rounded-lg text-left ${
+                  money >= 650 ? 'bg-blue-600/20 hover:bg-blue-600/30' : 'bg-white/5 opacity-50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold">🛡️ Kevlar + Helmet</span>
+                  <span className="text-green-400">$650</span>
+                </div>
+              </motion.button>
+            </div>
+
+            <div className="mt-6 text-xs text-gray-500 text-center">
+              Press <kbd className="px-2 py-1 bg-white/10 rounded">T</kbd> to toggle menu
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Game View */}
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+        <div className="text-center">
+          <div className="text-8xl mb-6 animate-pulse">🎯</div>
+          <h2 className="font-display font-bold text-4xl mb-4">COMBAT STRIKE 2</h2>
+          <p className="text-xl text-gray-400 mb-8">Full 3D FPS experience would render here</p>
+          <div className="text-gray-500 space-y-2">
+            <div>Press <kbd className="px-3 py-1 bg-white/10 rounded font-bold">T</kbd> to open Buy Menu</div>
+            <div>Press <kbd className="px-3 py-1 bg-white/10 rounded font-bold">Y</kbd> to open Chat</div>
+            <div>Use <kbd className="px-3 py-1 bg-white/10 rounded font-bold">WASD</kbd> to move</div>
+            <div>Use <kbd className="px-3 py-1 bg-white/10 rounded font-bold">MOUSE</kbd> to aim</div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== MEB AI ASSISTANT ====================
+function MebAIAssistant({ onClose, games, user, launchGame }) {
+  const [messages, setMessages] = useState([
+    { type: 'ai', text: `Hey ${user.username}! 👋 I'm MEB AI, your personal gaming assistant. I can help you discover new games, get recommendations, and optimize your gaming experience!` }
+  ]);
+  const [input, setInput] = useState('');
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+    
+    setMessages(prev => [...prev, { type: 'user', text: input }]);
+    
+    setTimeout(() => {
+      const response = generateAIResponse(input, games, user);
+      setMessages(prev => [...prev, { type: 'ai', text: response.text, games: response.games }]);
+    }, 1000);
+    
+    setInput('');
+  };
+
+  const generateAIResponse = (query, games, user) => {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('fps') || lowerQuery.includes('shooter')) {
+      const fpsGames = games.filter(g => g.category === 'fps').slice(0, 3);
+      return {
+        text: "Based on your interest in FPS games, I recommend these titles:",
+        games: fpsGames
+      };
+    }
+    
+    if (lowerQuery.includes('multiplayer')) {
+      const mpGames = games.filter(g => g.multiplayer).slice(0, 3);
+      return {
+        text: "Here are some amazing multiplayer games you should try:",
+        games: mpGames
+      };
+    }
+    
+    if (lowerQuery.includes('popular') || lowerQuery.includes('trending')) {
+      const popular = [...games].sort((a, b) => b.players - a.players).slice(0, 3);
+      return {
+        text: "These are the most popular games right now on MEGA PLAY:",
+        games: popular
+      };
+    }
+    
+    return {
+      text: "I can help you find the perfect game! Try asking me about FPS games, multiplayer titles, or trending games. What are you in the mood for?",
+      games: []
+    };
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl h-[600px] glass-effect rounded-2xl flex flex-col"
+      >
+        <div className="p-6 border-b border-white/20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-2xl">
+              🤖
+            </div>
+            <div>
+              <h2 className="font-display font-bold text-2xl">MEB AI</h2>
+              <p className="text-sm text-gray-400">Your Gaming Assistant</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-2xl hover:text-red-400 transition-colors">✕</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-4">
+          {messages.map((msg, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[80%] p-4 rounded-xl ${
+                msg.type === 'user' 
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600' 
+                  : 'bg-white/10'
+              }`}>
+                <p className="mb-2">{msg.text}</p>
+                {msg.games && msg.games.length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    {msg.games.map(game => (
+                      <div key={game.id} className="p-3 bg-black/30 rounded-lg flex items-center justify-between">
+                        <div>
+                          <div className="font-bold">{game.name}</div>
+                          <div className="text-sm text-gray-400">⭐ {game.rating} • 👥 {(game.players / 1000).toFixed(1)}K</div>
+                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => launchGame(game)}
+                          className="px-4 py-2 bg-indigo-600 rounded-lg font-semibold text-sm"
+                        >
+                          Play
+                        </motion.button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="p-6 border-t border-white/20">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask MEB AI anything..."
+              className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:border-indigo-500 focus:outline-none"
+            />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSend}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg font-bold"
+            >
+              Send
+            </motion.button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ==================== CHAT PANEL ====================
+function ChatPanel({ onClose, notifications }) {
+  return (
+    <motion.div
+      initial={{ x: 400 }}
+      animate={{ x: 0 }}
+      exit={{ x: 400 }}
+      className="fixed right-0 top-0 bottom-0 w-96 glass-effect border-l border-white/20 z-50 flex flex-col"
+    >
+      <div className="p-6 border-b border-white/20 flex items-center justify-between">
+        <h2 className="font-display font-bold text-xl">💬 Messages</h2>
+        <button onClick={onClose} className="text-xl hover:text-red-400">✕</button>
+      </div>
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-4">
+        {notifications.map(notif => (
+          <motion.div
+            key={notif.id}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="p-4 bg-white/10 rounded-lg"
+          >
+            <p className="mb-2">{notif.text}</p>
+            <p className="text-sm text-gray-400">{notif.time}</p>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== FRIENDS PANEL ====================
+function FriendsPanel({ onClose, friends }) {
+  return (
+    <motion.div
+      initial={{ x: 400 }}
+      animate={{ x: 0 }}
+      exit={{ x: 400 }}
+      className="fixed right-0 top-0 bottom-0 w-96 glass-effect border-l border-white/20 z-50 flex flex-col"
+    >
+      <div className="p-6 border-b border-white/20 flex items-center justify-between">
+        <h2 className="font-display font-bold text-xl">👥 Friends</h2>
+        <button onClick={onClose} className="text-xl hover:text-red-400">✕</button>
+      </div>
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-3">
+        {friends.map(friend => (
+          <motion.div
+            key={friend.id}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="p-4 bg-white/10 rounded-lg flex items-center gap-3"
+          >
+            <div className={`w-3 h-3 rounded-full ${friend.status === 'online' ? 'bg-green-500' : 'bg-gray-500'}`} />
+            <div className="flex-1">
+              <div className="font-bold">{friend.name}</div>
+              {friend.game && <div className="text-sm text-gray-400">{friend.game}</div>}
+            </div>
+            <button className="px-3 py-1 bg-indigo-600 rounded-lg text-sm font-semibold">Invite</button>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ==================== PROFILE PANEL ====================
+function ProfilePanel({ onClose, user }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.9 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl glass-effect rounded-2xl p-8"
+      >
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-display font-bold text-3xl">Profile</h2>
+          <button onClick={onClose} className="text-2xl hover:text-red-400">✕</button>
+        </div>
+        
+        <div className="flex items-start gap-8 mb-8">
+          <img src={user.avatar} alt="Avatar" className="w-32 h-32 rounded-2xl border-4 border-indigo-500" />
+          <div className="flex-1">
+            <h3 className="font-display font-bold text-4xl mb-2">{user.username}</h3>
+            <div className="flex items-center gap-4 mb-4">
+              <span className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg font-bold">
+                Level {user.level}
+              </span>
+              <span className="px-4 py-2 bg-white/10 rounded-lg font-bold">
+                {user.rank}
+              </span>
+            </div>
+            <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden mb-2">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                style={{ width: `${(user.xp / user.xpToNext) * 100}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-400">{user.xp} / {user.xpToNext} XP to next level</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          <div className="p-6 bg-white/10 rounded-xl text-center">
+            <div className="text-4xl font-bold text-indigo-400 mb-2">{user.friends}</div>
+            <div className="text-gray-400">Friends</div>
+          </div>
+          <div className="p-6 bg-white/10 rounded-xl text-center">
+            <div className="text-4xl font-bold text-yellow-400 mb-2">{user.achievements}</div>
+            <div className="text-gray-400">Achievements</div>
+          </div>
+          <div className="p-6 bg-white/10 rounded-xl text-center">
+            <div className="text-4xl font-bold text-green-400 mb-2">{user.hoursPlayed}</div>
+            <div className="text-gray-400">Hours Played</div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ==================== SETTINGS PANEL ====================
+function SettingsPanel({ onClose }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.9 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl glass-effect rounded-2xl p-8"
+      >
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-display font-bold text-3xl">⚙️ Settings</h2>
+          <button onClick={onClose} className="text-2xl hover:text-red-400">✕</button>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-bold text-xl mb-4">Graphics</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-white/10 rounded-lg">
+                <span>Quality</span>
+                <select className="px-4 py-2 bg-white/10 rounded-lg border border-white/20">
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Ultra</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-white/10 rounded-lg">
+                <span>Resolution</span>
+                <select className="px-4 py-2 bg-white/10 rounded-lg border border-white/20">
+                  <option>1280x720</option>
+                  <option>1920x1080</option>
+                  <option>2560x1440</option>
+                  <option>3840x2160</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-xl mb-4">Audio</h3>
+            <div className="space-y-3">
+              <div className="p-4 bg-white/10 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span>Master Volume</span>
+                  <span>80%</span>
+                </div>
+                <input type="range" min="0" max="100" defaultValue="80" className="w-full" />
+              </div>
+              <div className="p-4 bg-white/10 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span>Music Volume</span>
+                  <span>60%</span>
+                </div>
+                <input type="range" min="0" max="100" defaultValue="60" className="w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
